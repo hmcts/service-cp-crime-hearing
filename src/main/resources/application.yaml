@@ -1,9 +1,13 @@
 spring:
   application:
-    name: service-UPDATE-TO-BE-NAME-OF-SERVICE
+    name: service-cp-crime-hearing
 
 server:
   port: ${SERVER_PORT:8082}
+
+cp:
+  backend-url: ${CP_BACKEND_URL:http://localhost:8081}
+  cjscppuid: ${CJSCPPUID:}
 
 azure:
   application-insights:
