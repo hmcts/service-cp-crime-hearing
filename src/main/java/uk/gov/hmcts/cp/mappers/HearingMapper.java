@@ -2,6 +2,7 @@ package uk.gov.hmcts.cp.mappers;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.owasp.encoder.Encode;
 import org.springframework.stereotype.Component;
 import uk.gov.hmcts.cp.domain.HearingTimelineResponse;
 import uk.gov.hmcts.cp.domain.HearingTimelineResponse.HearingSummary;
@@ -79,7 +80,11 @@ public class HearingMapper {
             try {
                 date = LocalDate.parse(summary.getHearingDate());
             } catch (DateTimeParseException e) {
-                log.warn("Unparseable hearingDate '{}' for hearingId {}", summary.getHearingDate(), summary.getHearingId());
+                log.warn(
+                        "Unparseable hearingDate '{}' for hearingId {}",
+                        Encode.forJava(summary.getHearingDate()),
+                        Encode.forJava(String.valueOf(summary.getHearingId()))
+                );
             }
         }
         return date;
