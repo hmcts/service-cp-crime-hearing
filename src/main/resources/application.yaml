@@ -5,9 +5,14 @@ spring:
 server:
   port: ${SERVER_PORT:8082}
 
-cp:
-  backend-url: ${CP_BACKEND_URL:http://localhost:8081}
+hearing-client:
+  url: ${CP_BACKEND_URL:http://localhost:8081}
+  path: /hearing-query-api/query/api/rest/hearing/timeline
   cjscppuid: ${CJSCPPUID:}
+
+case-mapper-client:
+  url: ${AMP_BACKEND_URL:http://localhost:8081}
+  path: /urnmapper
 
 azure:
   application-insights:
