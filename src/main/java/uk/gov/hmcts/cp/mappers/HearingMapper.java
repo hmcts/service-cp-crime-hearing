@@ -9,8 +9,8 @@ import uk.gov.hmcts.cp.domain.HearingTimelineResponse.HearingSummary;
 import uk.gov.hmcts.cp.openapi.model.HearingSummaryView;
 import uk.gov.hmcts.cp.openapi.model.HearingTimelineView;
 import uk.gov.hmcts.cp.openapi.model.NextAppearance;
+import uk.gov.hmcts.cp.services.ClockService;
 
-import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.Collections;
@@ -24,7 +24,7 @@ import java.util.Optional;
 @Slf4j
 public class HearingMapper {
 
-    private final Clock clock;
+    private final ClockService clockService;
 
     public HearingTimelineView mapToHearingTimelineView(final HearingTimelineResponse response) {
         final List<HearingSummary> summaries = Optional.ofNullable(response)
@@ -59,7 +59,7 @@ public class HearingMapper {
     }
 
     private NextAppearance resolveNextAppearance(final List<HearingSummary> summaries) {
-        final LocalDate today = LocalDate.now(clock);
+        final LocalDate today = clockService.nowOffsetUTC().toLocalDate();
         return summaries.stream()
                 .filter(s -> parseDate(s) != null && !parseDate(s).isBefore(today))
                 .min(Comparator.comparing(this::parseDate))

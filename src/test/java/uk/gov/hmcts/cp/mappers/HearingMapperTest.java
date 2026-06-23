@@ -6,6 +6,7 @@ import uk.gov.hmcts.cp.domain.HearingTimelineResponse.HearingSummary;
 import uk.gov.hmcts.cp.openapi.model.HearingSummaryView;
 import uk.gov.hmcts.cp.openapi.model.HearingTimelineView;
 import uk.gov.hmcts.cp.openapi.model.NextAppearance;
+import uk.gov.hmcts.cp.services.ClockService;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -19,7 +20,7 @@ class HearingMapperTest {
 
     private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2026-06-23T00:00:00Z"), ZoneOffset.UTC);
 
-    private final HearingMapper hearingMapper = new HearingMapper(FIXED_CLOCK);
+    private final HearingMapper hearingMapper = new HearingMapper(new ClockService(FIXED_CLOCK));
 
     @Test
     void mapToHearingTimelineView_should_returnEmptyTimeline_whenResponseIsNull() {
