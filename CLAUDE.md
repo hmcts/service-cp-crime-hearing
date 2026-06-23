@@ -28,7 +28,7 @@ default (501) implementation — not yet started.
 - `clients/HearingClient` — calls `hearing-query-api`'s `/timeline/{caseId}`.
 - `mappers/HearingMapper` — owns all `HearingTimelineView`/`HearingSummaryView`/`NextAppearance`
   builder construction; sorts hearings chronologically and computes `nextAppearance` as the
-  earliest hearing on or after "today" (`Clock` bean, injected for testability).
+  earliest hearing on or after "today" (via `ClockService`, per the shared time-access standard).
 
 ## Environment Variables
 
@@ -50,7 +50,7 @@ default (501) implementation — not yet started.
      with a `CJSCPPUID` header — no other auth on that call.
 - `nextAppearance` has no `hearingId` input on the published `getCaseTimeline` contract (only `caseURN`),
   unlike the reference `cpp-case-aggregator-poc` implementation which takes an explicit `hearingId`. It is
-  computed automatically as the earliest *future* hearing relative to `Clock.systemUTC()` — this is a
+  computed automatically as the earliest *future* hearing relative to `ClockService.nowOffsetUTC()` — this is a
   deliberate interpretation of the contract, not a literal upstream field; revisit if product intent differs.
 - `defendantAttendance`/`defendants` endpoints are unimplemented. Building them needs two unresolved data
   gaps: `offences[].status` has no source field on `hearing-query-api`'s raw offence object (would need a
