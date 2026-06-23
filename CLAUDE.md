@@ -24,7 +24,7 @@ have not been written yet; that is a follow-up implementation task, not yet star
 
 | Variable | Purpose | Default |
 |---|---|---|
-| `CP_BACKEND_URL` | Base URL of the CP backend gateway fronting `hearing-query-api` | none — required |
+| `CP_BACKEND_URL` | Base URL of the CP backend gateway fronting `hearing-query-api` | `http://localhost:8081` |
 | `CJSCPPUID` | User UUID propagated to `hearing-query-api` for authorization | empty |
 | `SERVER_PORT` | HTTP port | `8082` |
 
