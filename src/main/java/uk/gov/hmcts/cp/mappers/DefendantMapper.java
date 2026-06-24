@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 import uk.gov.hmcts.cp.domain.HearingResponse.DefendantEntry;
 import uk.gov.hmcts.cp.domain.HearingResponse.OffenceEntry;
 import uk.gov.hmcts.cp.domain.HearingResponse.PersonDefendant;
-import uk.gov.hmcts.cp.domain.HearingResponse.Plea;
+import uk.gov.hmcts.cp.domain.HearingResponse.PleaEntry;
 import uk.gov.hmcts.cp.openapi.model.DefendantView;
 import uk.gov.hmcts.cp.openapi.model.OffenceView;
 
@@ -58,8 +58,8 @@ public class DefendantMapper {
                 .build();
     }
 
-    private String toStatus(final Plea plea) {
-        final String pleaValue = Optional.ofNullable(plea).map(Plea::getPleaValue).orElse(null);
+    private String toStatus(final PleaEntry plea) {
+        final String pleaValue = Optional.ofNullable(plea).map(PleaEntry::getPleaValue).orElse(null);
         return (pleaValue == null || pleaValue.isBlank()) ? DEFAULT_OFFENCE_STATUS : pleaValue;
     }
 }

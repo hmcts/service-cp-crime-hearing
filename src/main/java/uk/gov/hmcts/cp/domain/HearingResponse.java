@@ -107,7 +107,7 @@ public class HearingResponse {
         private UUID id;
         private String offenceCode;
         private String offenceTitle;
-        private Plea plea;
+        private PleaEntry plea;
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
@@ -115,7 +115,7 @@ public class HearingResponse {
     @AllArgsConstructor
     @NoArgsConstructor
     @Getter
-    public static class Plea {
+    public static class PleaEntry {
         private String pleaValue;
     }
 }

@@ -5,7 +5,7 @@ import uk.gov.hmcts.cp.domain.HearingResponse.DefendantEntry;
 import uk.gov.hmcts.cp.domain.HearingResponse.OffenceEntry;
 import uk.gov.hmcts.cp.domain.HearingResponse.PersonDefendant;
 import uk.gov.hmcts.cp.domain.HearingResponse.PersonDetails;
-import uk.gov.hmcts.cp.domain.HearingResponse.Plea;
+import uk.gov.hmcts.cp.domain.HearingResponse.PleaEntry;
 import uk.gov.hmcts.cp.openapi.model.DefendantView;
 
 import java.util.List;
@@ -70,7 +70,7 @@ class DefendantMapperTest {
                                 .id(offenceId)
                                 .offenceCode("OF61102C")
                                 .offenceTitle("Conspire to assault a person thereby occasioning them actual bodily harm")
-                                .plea(Plea.builder().pleaValue("GUILTY").build())
+                                .plea(PleaEntry.builder().pleaValue("GUILTY").build())
                                 .build()
                 ))
                 .build();
