@@ -22,7 +22,7 @@ flowchart LR
         HearingQueryApi["hearing-query-api\n(legacy CQRS)"]
     end
 
-    HMPPS -->|"GET /hearings/cases/{caseURN}/timeline\nGET /hearings/{hearingId}/attendance"| Hearing
+    HMPPS -->|"GET /hearings/cases/{caseURN}/timeline\nGET /hearings/{hearingId}/attendance\nGET /hearings/{hearingId}/cases/{caseURN}/defendants"| Hearing
 
     Hearing -->|"GET /urnmapper/{caseURN}\n(caseURN → caseId, getCaseTimeline only)"| UrnMapper
     Hearing -->|"GET /hearing-query-api/query/api/rest/hearing/timeline/{caseId}\nAccept: application/vnd.hearing.case.timeline+json"| HearingQueryApi
@@ -33,7 +33,7 @@ flowchart LR
 |---|---|---|---|---|---|
 | 1a | `service-cp-crime-hearing` | `urnmapper` | `GET ${AMP_BACKEND_URL}/urnmapper/{caseURN}` | `application/json` | `getCaseTimeline` only |
 | 1b | `service-cp-crime-hearing` | `hearing-query-api` | `GET ${CP_BACKEND_URL}/hearing-query-api/query/api/rest/hearing/timeline/{caseId}` | `application/vnd.hearing.case.timeline+json` | `getCaseTimeline` |
-| 2 | `service-cp-crime-hearing` | `hearing-query-api` | `GET ${CP_BACKEND_URL}/hearing-query-api/query/api/rest/hearing/hearings/{hearingId}` | `application/vnd.hearing.get.hearing+json` | `getDefendantAttendance`, `resolveDefendantId` (no controller wired yet) |
+| 2 | `service-cp-crime-hearing` | `hearing-query-api` | `GET ${CP_BACKEND_URL}/hearing-query-api/query/api/rest/hearing/hearings/{hearingId}` | `application/vnd.hearing.get.hearing+json` | `getDefendantAttendance`, `getDefendants` |
 
 All hops 1b/2 send a `CJSCPPUID` header for authorization; hop 1a sends none.
 
@@ -48,6 +48,7 @@ flowchart TD
     HearingClient["HearingClient"]
     HearingMapper["HearingMapper"]
     AttendanceMapper["DefendantAttendanceMapper"]
+    DefendantMapper["DefendantMapper"]
     GlobalEx["GlobalExceptionHandler\n(@RestControllerAdvice)"]
 
     Controller --> ServiceL
@@ -55,12 +56,13 @@ flowchart TD
     ServiceL --> HearingClient
     ServiceL --> HearingMapper
     ServiceL --> AttendanceMapper
+    ServiceL --> DefendantMapper
     Controller -.->|"4xx/5xx from any client call"| GlobalEx
 ```
 
 - **Controller** — thin; delegates to `HearingService`, returns `ResponseEntity`. No business logic, no object construction.
 - **Service** — orchestrates the client(s) + mapper for each endpoint. Never builds response objects directly.
-- **Mapper** — owns all `.builder()` construction. `HearingMapper` for the timeline; `DefendantAttendanceMapper` for attendance — kept separate since they map different domain models from different upstream calls.
+- **Mapper** — owns all `.builder()` construction. `HearingMapper` for the timeline; `DefendantAttendanceMapper` for attendance; `DefendantMapper` for `getDefendants` — kept separate since each maps a different domain shape, even though the latter two share the same upstream call.
 - **Client** — `CaseUrnMapperClient` (urnmapper), `HearingClient` (`hearing-query-api`, two methods: `getTimeline`, `getHearing`). No business logic.
 - **GlobalExceptionHandler** — catches `HttpClientErrorException`/`HttpServerErrorException` from any client call and maps to the contract's `ErrorResponse`; this is how a 404 from either upstream hop becomes a 404 to the API consumer, with no per-endpoint error-handling code.
 
@@ -109,7 +111,32 @@ sequenceDiagram
     Ctrl-->>Client: 200 OK (404 if hearingId doesn't exist, via GlobalExceptionHandler)
 ```
 
-`resolveDefendantId(hearingId, masterDefendantId, caseURN)` reuses the same `HearingClient.getHearing`
-call and `HearingResponse` DTO, reading `hearing.prosecutionCases[].defendants[]` instead of
-`hearing.defendantAttendance[]` — no second HTTP call. It has no controller wired to it yet; it's
-infrastructure for the future `getDefendants` endpoint.
+## Sequence — `getDefendants` (single-hop, shared upstream call)
+
+```mermaid
+sequenceDiagram
+    participant Client as HMPPS
+    participant Ctrl as HearingController
+    participant Svc as HearingService
+    participant HClient as HearingClient
+    participant HQA as hearing-query-api
+
+    Client->>Ctrl: GET /hearings/{hearingId}/cases/{caseURN}/defendants?masterDefendantId
+    Ctrl->>Svc: getDefendants(hearingId, caseURN, masterDefendantId)
+    Svc->>HClient: getHearing(hearingId)
+    HClient->>HQA: GET .../hearings/{hearingId}
+    HQA-->>HClient: HearingResponse (hearing.prosecutionCases[].defendants[])
+    Svc->>Svc: filter by caseURN, then optionally by masterDefendantId
+    Svc->>Svc: DefendantMapper.mapToDefendantViews(...)
+    Svc-->>Ctrl: List<DefendantView>
+    Ctrl-->>Client: 200 OK
+```
+
+`getDefendants(hearingId, caseURN, masterDefendantId)` reuses the same `HearingClient.getHearing`
+call and `HearingResponse` DTO as `getDefendantAttendance` — no second HTTP call — reading
+`hearing.prosecutionCases[].defendants[]` instead of `hearing.defendantAttendance[]`. It replaced
+the earlier `resolveDefendantId` building block, which only returned matching defendant IDs and
+required `masterDefendantId`; the real endpoint needed the opposite optionality (`caseURN` always
+required, `masterDefendantId` optional) plus full `DefendantView` data via `DefendantMapper`.
+`dateOfBirth` is omitted — not present anywhere in the upstream response. `offences[].status` is
+derived from `plea.pleaValue` (`"Active"` if no plea recorded).
