@@ -8,9 +8,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import uk.gov.hmcts.cp.openapi.model.DefendantAttendanceView;
+import uk.gov.hmcts.cp.openapi.model.DefendantView;
 import uk.gov.hmcts.cp.openapi.model.HearingTimelineView;
 import uk.gov.hmcts.cp.services.HearingService;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,5 +62,19 @@ class HearingControllerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(expectedView);
+    }
+
+    @Test
+    void getDefendants_should_returnOkWithDefendantViews() {
+        UUID hearingId = UUID.randomUUID();
+        UUID masterDefendantId = UUID.randomUUID();
+        String caseURN = "test-case-urn";
+        List<DefendantView> expectedViews = List.of(DefendantView.builder().id(UUID.randomUUID()).masterDefendantId(masterDefendantId).build());
+        when(hearingService.getDefendants(hearingId, caseURN, masterDefendantId)).thenReturn(expectedViews);
+
+        ResponseEntity<List<DefendantView>> response = hearingController.getDefendants(hearingId, caseURN, masterDefendantId);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(expectedViews);
     }
 }

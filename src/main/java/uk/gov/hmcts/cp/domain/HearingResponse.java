@@ -75,5 +75,47 @@ public class HearingResponse {
     public static class DefendantEntry {
         private UUID id;
         private UUID masterDefendantId;
+        private PersonDefendant personDefendant;
+        private List<OffenceEntry> offences;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    public static class PersonDefendant {
+        private PersonDetails personDetails;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    public static class PersonDetails {
+        private String firstName;
+        private String lastName;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    public static class OffenceEntry {
+        private UUID id;
+        private String offenceCode;
+        private String offenceTitle;
+        private Plea plea;
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    public static class Plea {
+        private String pleaValue;
     }
 }

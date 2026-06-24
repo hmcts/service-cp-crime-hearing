@@ -9,9 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.cp.openapi.api.HearingsApi;
 import uk.gov.hmcts.cp.openapi.model.DefendantAttendanceView;
+import uk.gov.hmcts.cp.openapi.model.DefendantView;
 import uk.gov.hmcts.cp.openapi.model.HearingTimelineView;
 import uk.gov.hmcts.cp.services.HearingService;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -39,5 +41,16 @@ public class HearingController implements HearingsApi {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(attendanceView);
+    }
+
+    @Override
+    @NonNull
+    public ResponseEntity<List<DefendantView>> getDefendants(final UUID hearingId, final String caseURN, final UUID masterDefendantId) {
+        log.info("Received request to get defendants for hearingId:{} caseURN:{}",
+                Encode.forJava(String.valueOf(hearingId)), Encode.forJava(caseURN));
+        final List<DefendantView> defendants = hearingService.getDefendants(hearingId, caseURN, masterDefendantId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(defendants);
     }
 }
