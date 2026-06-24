@@ -8,8 +8,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 import uk.gov.hmcts.cp.openapi.api.HearingsApi;
+import uk.gov.hmcts.cp.openapi.model.DefendantAttendanceView;
 import uk.gov.hmcts.cp.openapi.model.HearingTimelineView;
 import uk.gov.hmcts.cp.services.HearingService;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,5 +29,15 @@ public class HearingController implements HearingsApi {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(timelineView);
+    }
+
+    @Override
+    @NonNull
+    public ResponseEntity<DefendantAttendanceView> getDefendantAttendance(final UUID hearingId) {
+        log.info("Received request to get defendant attendance for hearingId:{}", Encode.forJava(String.valueOf(hearingId)));
+        final DefendantAttendanceView attendanceView = hearingService.getDefendantAttendance(hearingId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(attendanceView);
     }
 }

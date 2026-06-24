@@ -1,0 +1,38 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/hearing-query-api/query/api/rest/hearing/hearings/edcfb790-d709-4d57-8e30-6d2e0546a459",
+    "headers": {
+      "Accept": {
+        "equalTo": "application/vnd.hearing.get.hearing+json"
+      },
+      "CJSCPPUID": {
+        "equalTo": "52b25984-4315-4db7-bbf4-8d54274cc7b5"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/vnd.hearing.get.hearing+json"
+    },
+    "jsonBody": {
+      "hearing": {
+        "id": "edcfb790-d709-4d57-8e30-6d2e0546a459",
+        "hearingState": "SHARED",
+        "jurisdictionType": "MAGISTRATES",
+        "defendantAttendance": [
+          {
+            "defendantId": "607c1a89-5773-417d-8189-ce15fc6fd34f",
+            "attendanceDays": [
+              {
+                "day": "2026-06-23",
+                "attendanceType": "IN_PERSON"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

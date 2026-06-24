@@ -10,6 +10,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import uk.gov.hmcts.cp.config.AppPropertiesBackend;
+import uk.gov.hmcts.cp.domain.HearingResponse;
+import uk.gov.hmcts.cp.domain.HearingResponse.HearingDetail;
 import uk.gov.hmcts.cp.domain.HearingTimelineResponse;
 import uk.gov.hmcts.cp.domain.HearingTimelineResponse.HearingSummary;
 
@@ -53,5 +55,25 @@ class HearingClientTest {
         HearingTimelineResponse result = hearingClient.getTimeline(caseId);
 
         assertThat(result.getHearingSummaries()).hasSize(1);
+    }
+
+    @Test
+    void getHearing_should_returnHearingResponse_whenResponseIsSuccessful() {
+        when(appProperties.getHearingUrl()).thenReturn("http://mock-server");
+        when(appProperties.getHearingGetPath()).thenReturn("/hearing-query-api/query/api/rest/hearing/hearings");
+        when(appProperties.getHearingCjscppuid()).thenReturn("test-cjscppuid");
+        HearingResponse response = HearingResponse.builder()
+                .hearing(HearingDetail.builder().build())
+                .build();
+        when(restTemplate.exchange(
+                anyString(),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(HearingResponse.class)
+        )).thenReturn(ResponseEntity.ok(response));
+
+        HearingResponse result = hearingClient.getHearing(caseId);
+
+        assertThat(result.getHearing()).isNotNull();
     }
 }

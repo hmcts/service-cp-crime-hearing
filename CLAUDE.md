@@ -16,19 +16,37 @@ HMPPS/Prison services.
 
 ## Source Structure
 
-Only `getCaseTimeline` (`GET /hearings/cases/{caseURN}/timeline`) is implemented so far.
-`getDefendantAttendance` and `getDefendants` still fall through to `HearingsApi`'s
-default (501) implementation — not yet started.
+`getCaseTimeline` (`GET /hearings/cases/{caseURN}/timeline`) and `getDefendantAttendance`
+(`GET /hearings/{hearingId}/attendance`) are implemented. `getDefendants` still falls through
+to `HearingsApi`'s default (501) implementation — one of its two data gaps is now resolved
+(see Architecture Rules), the other (`offences[].status`) is not.
 
-- `controllers/HearingController` — implements `HearingsApi`, overrides `getCaseTimeline` only.
-- `services/HearingService` — resolves `caseURN` → `caseId`, fetches the timeline, delegates mapping.
+- `controllers/HearingController` — implements `HearingsApi`, overrides `getCaseTimeline` and
+  `getDefendantAttendance`.
+- `services/HearingService` — `getCaseTimeline` resolves `caseURN` → `caseId`, fetches the
+  timeline, delegates mapping. `getDefendantAttendance` fetches the hearing, delegates mapping.
+  `resolveDefendantId(hearingId, masterDefendantId, caseURN)` fetches the same hearing and
+  filters `prosecutionCases[].defendants[]` by `masterDefendantId` (optionally narrowed by
+  `caseURN`) — infrastructure for `getDefendants`, no controller wired to it yet.
 - `services/CaseUrnMapperService` + `clients/CaseUrnMapperClient` — resolves `caseURN` to a `caseId`
   via the `urnmapper` backend (see Architecture Rules below) — the same pattern as
   `service-cp-crime-prosecution-case-details`.
-- `clients/HearingClient` — calls `hearing-query-api`'s `/timeline/{caseId}`.
+- `clients/HearingClient` — `getTimeline` calls `hearing-query-api`'s `/timeline/{caseId}`;
+  `getHearing` calls `/hearings/{hearingId}` (`Accept: application/vnd.hearing.get.hearing+json`) —
+  shared by `getDefendantAttendance` and `resolveDefendantId`.
 - `mappers/HearingMapper` — owns all `HearingTimelineView`/`HearingSummaryView`/`NextAppearance`
   builder construction; sorts hearings chronologically and computes `nextAppearance` as the
   earliest hearing on or after "today" (via `ClockService`, per the shared time-access standard).
+- `mappers/DefendantAttendanceMapper` — owns all `DefendantAttendanceView`/`DefendantAttendance`/
+  `AttendanceDay` builder construction. Separate from `HearingMapper` — different domain model,
+  different upstream call.
+- `domain/HearingResponse` — DTO for the `GET /hearings/{hearingId}` response, shared by
+  `getDefendantAttendance` and `resolveDefendantId` (one upstream call, two read-paths over the
+  same response). The response is wrapped in a `hearing` envelope — confirmed live against
+  `steccm64` dev, not just from RAML/example files (the checked-in RAML example is incomplete —
+  see Architecture Rules).
+- `filters/tracing/TracingFilter` — ported from `service-cp-crime-prosecution-case-details`;
+  this repo had none until now, despite `service-shared.md` mandating one for every `service-cp-*`.
 
 ## Environment Variables
 
@@ -52,11 +70,18 @@ default (501) implementation — not yet started.
   unlike the reference `cpp-case-aggregator-poc` implementation which takes an explicit `hearingId`. It is
   computed automatically as the earliest *future* hearing relative to `ClockService.nowOffsetUTC()` — this is a
   deliberate interpretation of the contract, not a literal upstream field; revisit if product intent differs.
-- `defendantAttendance`/`defendants` endpoints are unimplemented. Building them needs two unresolved data
-  gaps: `offences[].status` has no source field on `hearing-query-api`'s raw offence object (would need a
-  second call to `resulting-query-api`/`results-query-api`, or a derivation rule from plea fields), and the
-  optional `masterDefendantId` filter has no equivalent on `hearing-query-api`'s defendant object (only on
-  `progression`'s `/prosecutioncases/{caseId}`, per `cpp-case-aggregator-poc`'s own design notes).
+- `getDefendantAttendance` is a **single-hop** call, unlike `getCaseTimeline` — `hearingId` is
+  used directly against `GET /hearings/{hearingId}`, no `caseURN`→`caseId` resolution needed.
+- **Corrected data gap**: this file previously stated `hearing-query-api`'s defendant object has
+  no `masterDefendantId` equivalent. It does — nested under
+  `hearing.prosecutionCases[].defendants[].masterDefendantId` on the same `GET /hearings/{hearingId}`
+  response, confirmed live against `steccm64` dev (the checked-in RAML example
+  `json/hearing.get.hearing.json` is incomplete and omits it — the binding schema and generated
+  POJO both have the field). `HearingService.resolveDefendantId` implements this resolution but
+  has no caller yet.
+- `getDefendants` remains blocked on one data gap only: `offences[].status` has no source field
+  on `hearing-query-api`'s raw offence object (would need a second call to
+  `resulting-query-api`/`results-query-api`, or a derivation rule from plea fields).
 - The `apiSpec` dependency is wired as a plain `implementation` coordinate (`uk.gov.hmcts.cp:api-cp-crime-hearing:1.0.0`) rather than a dedicated `apiSpec` Gradle configuration — this template generation does not define one; see `build.gradle`.
 
 ## Debugging
@@ -68,5 +93,5 @@ default (501) implementation — not yet started.
 
 ## Repo-Specific Notes
 
-`getDefendantAttendance` and `getDefendants` controllers/services/clients are not yet implemented —
-see the data gaps noted above before starting either.
+`getDefendants` (`/hearings/{hearingId}/cases/{caseURN}/defendants`) controller/service/client are
+not yet implemented — see the `offences[].status` data gap above before starting it.

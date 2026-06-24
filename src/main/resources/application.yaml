@@ -8,6 +8,7 @@ server:
 hearing-client:
   url: ${CP_BACKEND_URL:http://localhost:8081}
   path: /hearing-query-api/query/api/rest/hearing/timeline
+  get-path: /hearing-query-api/query/api/rest/hearing/hearings
   cjscppuid: ${CJSCPPUID:}
 
 case-mapper-client:

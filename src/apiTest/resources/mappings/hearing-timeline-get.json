@@ -1,0 +1,59 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/hearing-query-api/query/api/rest/hearing/timeline/970fc69f-fbd4-4a83-baaf-ce8c10df1e51",
+    "headers": {
+      "Accept": {
+        "equalTo": "application/vnd.hearing.case.timeline+json"
+      },
+      "CJSCPPUID": {
+        "equalTo": "52b25984-4315-4db7-bbf4-8d54274cc7b5"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/vnd.hearing.case.timeline+json"
+    },
+    "jsonBody": {
+      "hearingSummaries": [
+        {
+          "hearingId": "edcfb790-d709-4d57-8e30-6d2e0546a459",
+          "hearingType": "First hearing",
+          "courtHouse": "Bexley Magistrates' Court",
+          "courtRoom": "Courtroom 01",
+          "hearingTime": "11:30",
+          "startTime": "2026-06-23T10:30:00.000Z",
+          "estimatedDuration": 20,
+          "defendants": [
+            {
+              "id": "607c1a89-5773-417d-8189-ce15fc6fd34f",
+              "name": "Alessia Mitchell"
+            }
+          ],
+          "youthDefendantIds": [],
+          "hearingDate": "23 Jun 2026"
+        },
+        {
+          "hearingId": "f303e0d4-a330-410a-9fdd-b2c2ddba5781",
+          "hearingType": "Trial",
+          "courtHouse": "Liverpool Crown Court",
+          "courtRoom": "Crown Court 3-1",
+          "hearingTime": "13:30",
+          "startTime": "2026-06-23T12:30:00.000Z",
+          "estimatedDuration": 120,
+          "outcome": "Effective",
+          "defendants": [
+            {
+              "id": "607c1a89-5773-417d-8189-ce15fc6fd34f",
+              "name": "Alessia Mitchell"
+            }
+          ],
+          "youthDefendantIds": [],
+          "hearingDate": "23 Jun 2026"
+        }
+      ]
+    }
+  }
+}
