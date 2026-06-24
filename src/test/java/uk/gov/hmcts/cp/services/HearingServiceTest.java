@@ -78,7 +78,7 @@ class HearingServiceTest {
     }
 
     @Test
-    void resolveDefendantId_should_returnMatchingDefendantId_whenMasterDefendantIdMatches() {
+    void resolveDefendantIds_should_returnMatchingDefendantId_whenMasterDefendantIdMatches() {
         UUID masterDefendantId = UUID.randomUUID();
         UUID expectedDefendantId = UUID.randomUUID();
         HearingResponse hearingResponse = HearingResponse.builder()
@@ -95,13 +95,43 @@ class HearingServiceTest {
                 .build();
         when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
 
-        Optional<UUID> result = hearingService.resolveDefendantId(hearingId, masterDefendantId, "test-case-urn-a");
+        List<UUID> result = hearingService.resolveDefendantIds(hearingId, masterDefendantId, "test-case-urn-a");
 
-        assertThat(result).contains(expectedDefendantId);
+        assertThat(result).containsExactly(expectedDefendantId);
     }
 
     @Test
-    void resolveDefendantId_should_ignoreOtherCases_whenCaseUrnGiven() {
+    void resolveDefendantIds_should_returnAllMatches_whenSameMasterDefendantIdLinkedAcrossMultipleCases() {
+        UUID masterDefendantId = UUID.randomUUID();
+        UUID defendantIdInCaseA = UUID.randomUUID();
+        UUID defendantIdInCaseB = UUID.randomUUID();
+        HearingResponse hearingResponse = HearingResponse.builder()
+                .hearing(HearingDetail.builder()
+                        .prosecutionCases(List.of(
+                                ProsecutionCase.builder()
+                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN("test-case-urn-a").build())
+                                        .defendants(List.of(
+                                                DefendantEntry.builder().id(defendantIdInCaseA).masterDefendantId(masterDefendantId).build()
+                                        ))
+                                        .build(),
+                                ProsecutionCase.builder()
+                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN("test-case-urn-b").build())
+                                        .defendants(List.of(
+                                                DefendantEntry.builder().id(defendantIdInCaseB).masterDefendantId(masterDefendantId).build()
+                                        ))
+                                        .build()
+                        ))
+                        .build())
+                .build();
+        when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
+
+        List<UUID> result = hearingService.resolveDefendantIds(hearingId, masterDefendantId, null);
+
+        assertThat(result).containsExactlyInAnyOrder(defendantIdInCaseA, defendantIdInCaseB);
+    }
+
+    @Test
+    void resolveDefendantIds_should_ignoreOtherCases_whenCaseUrnGiven() {
         UUID masterDefendantId = UUID.randomUUID();
         HearingResponse hearingResponse = HearingResponse.builder()
                 .hearing(HearingDetail.builder()
@@ -117,13 +147,13 @@ class HearingServiceTest {
                 .build();
         when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
 
-        Optional<UUID> result = hearingService.resolveDefendantId(hearingId, masterDefendantId, "test-case-urn-a");
+        List<UUID> result = hearingService.resolveDefendantIds(hearingId, masterDefendantId, "test-case-urn-a");
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    void resolveDefendantId_should_matchAcrossCases_whenCaseUrnNotGiven() {
+    void resolveDefendantIds_should_matchAcrossCases_whenCaseUrnNotGiven() {
         UUID masterDefendantId = UUID.randomUUID();
         UUID expectedDefendantId = UUID.randomUUID();
         HearingResponse hearingResponse = HearingResponse.builder()
@@ -140,18 +170,18 @@ class HearingServiceTest {
                 .build();
         when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
 
-        Optional<UUID> result = hearingService.resolveDefendantId(hearingId, masterDefendantId, null);
+        List<UUID> result = hearingService.resolveDefendantIds(hearingId, masterDefendantId, null);
 
-        assertThat(result).contains(expectedDefendantId);
+        assertThat(result).containsExactly(expectedDefendantId);
     }
 
     @Test
-    void resolveDefendantId_should_returnEmpty_whenNoDefendantMatches() {
+    void resolveDefendantIds_should_returnEmpty_whenNoDefendantMatches() {
         when(hearingClient.getHearing(hearingId)).thenReturn(HearingResponse.builder()
                 .hearing(HearingDetail.builder().build())
                 .build());
 
-        Optional<UUID> result = hearingService.resolveDefendantId(hearingId, UUID.randomUUID(), null);
+        List<UUID> result = hearingService.resolveDefendantIds(hearingId, UUID.randomUUID(), null);
 
         assertThat(result).isEmpty();
     }

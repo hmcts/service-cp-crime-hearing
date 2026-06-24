@@ -10,7 +10,6 @@ shown below.
 ```mermaid
 flowchart LR
     subgraph Consumers["API Marketplace consumers"]
-        RaS["Remand and Sentencing (RaS)"]
         HMPPS["HMPPS / Prison services"]
     end
 
@@ -23,7 +22,6 @@ flowchart LR
         HearingQueryApi["hearing-query-api\n(legacy CQRS)"]
     end
 
-    RaS -->|"GET /hearings/cases/{caseURN}/timeline\nGET /hearings/{hearingId}/attendance"| Hearing
     HMPPS -->|"GET /hearings/cases/{caseURN}/timeline\nGET /hearings/{hearingId}/attendance"| Hearing
 
     Hearing -->|"GET /urnmapper/{caseURN}\n(caseURN → caseId, getCaseTimeline only)"| UrnMapper
@@ -70,7 +68,7 @@ flowchart TD
 
 ```mermaid
 sequenceDiagram
-    participant Client as RaS/HMPPS
+    participant Client as HMPPS
     participant Ctrl as HearingController
     participant Svc as HearingService
     participant UrnSvc as CaseUrnMapperService
@@ -95,7 +93,7 @@ sequenceDiagram
 
 ```mermaid
 sequenceDiagram
-    participant Client as RaS/HMPPS
+    participant Client as HMPPS
     participant Ctrl as HearingController
     participant Svc as HearingService
     participant HClient as HearingClient

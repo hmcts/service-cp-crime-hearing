@@ -38,7 +38,7 @@ public class HearingService {
         return defendantAttendanceMapper.mapToDefendantAttendanceView(hearingId, hearingResponse);
     }
 
-    public Optional<UUID> resolveDefendantId(final UUID hearingId, final UUID masterDefendantId, final String caseUrn) {
+    public List<UUID> resolveDefendantIds(final UUID hearingId, final UUID masterDefendantId, final String caseUrn) {
         final HearingResponse hearingResponse = hearingClient.getHearing(hearingId);
         final List<HearingResponse.ProsecutionCase> prosecutionCases = Optional.ofNullable(hearingResponse)
                 .map(HearingResponse::getHearing)
@@ -50,7 +50,7 @@ public class HearingService {
                 .flatMap(pc -> Optional.ofNullable(pc.getDefendants()).orElse(Collections.emptyList()).stream())
                 .filter(d -> masterDefendantId.equals(d.getMasterDefendantId()))
                 .map(HearingResponse.DefendantEntry::getId)
-                .findFirst();
+                .toList();
     }
 
     private boolean matchesCaseUrn(final HearingResponse.ProsecutionCase prosecutionCase, final String caseUrn) {
