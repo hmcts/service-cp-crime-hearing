@@ -27,7 +27,7 @@ apply {
 dependencies {
   // Api spec
   implementation('uk.gov.hmcts.cp:api-cp-crime-hearing:1.0.1')
-  implementation('io.swagger.core.v3:swagger-annotations:2.2.50')
+  implementation('io.swagger.core.v3:swagger-annotations:2.2.52')
 
   // Java core
   implementation 'net.logstash.logback:logstash-logback-encoder:9.0'
