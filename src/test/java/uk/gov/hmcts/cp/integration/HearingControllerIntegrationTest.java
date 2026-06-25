@@ -29,6 +29,10 @@ class HearingControllerIntegrationTest extends IntegrationTestBase {
     private static final UUID CASE_ID = UUID.fromString("99999999-9999-9999-9999-999999999999");
     private static final UUID HEARING_ID = UUID.fromString("00000000-0000-0000-0000-000000000011");
     private static final UUID DEFENDANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000022");
+    private static final UUID DEFENDANT_ID_2 = UUID.fromString("00000000-0000-0000-0000-000000000023");
+    private static final UUID OFFENCE_ID = UUID.fromString("00000000-0000-0000-0000-000000000033");
+    private static final UUID MASTER_DEFENDANT_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
+    private static final UUID OTHER_MASTER_DEFENDANT_ID = UUID.fromString("33333333-3333-3333-3333-333333333333");
 
     private WireMockServer wireMockServer;
 
@@ -82,6 +86,45 @@ class HearingControllerIntegrationTest extends IntegrationTestBase {
     }
 
     @Test
+    void getCaseTimeline_should_returnOk_withEmptyHearings_whenCaseHasNoHearings() throws Exception {
+        stubUrnMapper(CASE_URN, CASE_ID);
+        stubTimeline(CASE_ID, HTTP_OK, """
+                {"hearingSummaries":[]}
+                """);
+
+        mockMvc.perform(get("/hearings/cases/{caseURN}/timeline", CASE_URN)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hearingSummaries").isEmpty())
+                .andExpect(jsonPath("$.nextAppearance").doesNotExist());
+    }
+
+    @Test
+    void getCaseTimeline_should_returnOk_withHearingsInChronologicalOrder() throws Exception {
+        UUID laterHearingId = UUID.fromString("00000000-0000-0000-0000-000000000012");
+        stubUrnMapper(CASE_URN, CASE_ID);
+        stubTimeline(CASE_ID, HTTP_OK, """
+                {"hearingSummaries":[
+                    {"hearingId":"%s","hearingDate":"2026-06-30","hearingType":"Trial","courtHouse":"Birmingham Crown Court","courtRoom":"Court room 4","hearingTime":"09:30","startTime":"09:45","outcome":"Adjourned"},
+                    {"hearingId":"%s","hearingDate":"2026-06-23","hearingType":"First hearing","courtHouse":"Bexley Magistrates' Court","courtRoom":"Courtroom 01","hearingTime":"11:30","startTime":"10:30","outcome":null}
+                ]}
+                """.formatted(laterHearingId, HEARING_ID));
+
+        mockMvc.perform(get("/hearings/cases/{caseURN}/timeline", CASE_URN)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.hearingSummaries[0].id").value(HEARING_ID.toString()))
+                .andExpect(jsonPath("$.hearingSummaries[0].courtHouse").value("Bexley Magistrates' Court"))
+                .andExpect(jsonPath("$.hearingSummaries[0].type").value("First hearing"))
+                .andExpect(jsonPath("$.hearingSummaries[0].courtRoom").value("Courtroom 01"))
+                .andExpect(jsonPath("$.hearingSummaries[0].time").value("11:30"))
+                .andExpect(jsonPath("$.hearingSummaries[0].startTime").value("10:30"))
+                .andExpect(jsonPath("$.hearingSummaries[1].id").value(laterHearingId.toString()));
+    }
+
+    @Test
     void getDefendantAttendance_should_returnOk_withMappedFields() throws Exception {
         stubGetHearing(HEARING_ID, HTTP_OK, """
                 {"hearing":{"id":"%s","defendantAttendance":[{"defendantId":"%s","attendanceDays":[{"day":"2026-06-23","attendanceType":"IN_PERSON"}]}]}}
@@ -115,6 +158,102 @@ class HearingControllerIntegrationTest extends IntegrationTestBase {
         stubGetHearingNotFound(HEARING_ID);
 
         mockMvc.perform(get("/hearings/{hearingId}/attendance", HEARING_ID)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getDefendants_should_returnOk_withAllDefendants_whenNoMasterDefendantIdGiven() throws Exception {
+        stubGetHearing(HEARING_ID, HTTP_OK, """
+                {"hearing":{"id":"%s","prosecutionCases":[{"prosecutionCaseIdentifier":{"caseURN":"%s"},"defendants":[
+                    {"id":"%s","masterDefendantId":"%s","personDefendant":{"personDetails":{"firstName":"John","lastName":"Doe"}},"offences":[{"id":"%s","offenceCode":"TH68001","offenceTitle":"Theft from a shop","plea":{"pleaValue":"GUILTY"}}]},
+                    {"id":"%s","masterDefendantId":"%s","personDefendant":{"personDetails":{"firstName":"Jane","lastName":"Smith"}},"offences":[]}
+                ]}]}}
+                """.formatted(HEARING_ID, CASE_URN, DEFENDANT_ID, MASTER_DEFENDANT_ID, OFFENCE_ID, DEFENDANT_ID_2, OTHER_MASTER_DEFENDANT_ID));
+
+        mockMvc.perform(get("/hearings/{hearingId}/cases/{caseURN}/defendants", HEARING_ID, CASE_URN)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(2))
+                .andExpect(jsonPath("$[0].id").value(DEFENDANT_ID.toString()))
+                .andExpect(jsonPath("$[0].masterDefendantId").value(MASTER_DEFENDANT_ID.toString()))
+                .andExpect(jsonPath("$[0].name").value("John Doe"))
+                .andExpect(jsonPath("$[0].offences[0].code").value("TH68001"))
+                .andExpect(jsonPath("$[0].offences[0].status").value("GUILTY"))
+                .andExpect(jsonPath("$[1].id").value(DEFENDANT_ID_2.toString()));
+    }
+
+    @Test
+    void getDefendants_should_returnOk_filteredByMasterDefendantId() throws Exception {
+        stubGetHearing(HEARING_ID, HTTP_OK, """
+                {"hearing":{"id":"%s","prosecutionCases":[{"prosecutionCaseIdentifier":{"caseURN":"%s"},"defendants":[
+                    {"id":"%s","masterDefendantId":"%s"},
+                    {"id":"%s","masterDefendantId":"%s"}
+                ]}]}}
+                """.formatted(HEARING_ID, CASE_URN, DEFENDANT_ID, MASTER_DEFENDANT_ID, DEFENDANT_ID_2, OTHER_MASTER_DEFENDANT_ID));
+
+        mockMvc.perform(get("/hearings/{hearingId}/cases/{caseURN}/defendants?masterDefendantId={masterDefendantId}",
+                        HEARING_ID, CASE_URN, MASTER_DEFENDANT_ID)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].id").value(DEFENDANT_ID.toString()));
+    }
+
+    @Test
+    void getDefendants_should_returnAwaitingPleaStatus_whenNoPleaRecorded() throws Exception {
+        stubGetHearing(HEARING_ID, HTTP_OK, """
+                {"hearing":{"id":"%s","prosecutionCases":[{"prosecutionCaseIdentifier":{"caseURN":"%s"},"defendants":[
+                    {"id":"%s","masterDefendantId":"%s","offences":[{"id":"%s","offenceCode":"TH68001","offenceTitle":"Theft from a shop"}]}
+                ]}]}}
+                """.formatted(HEARING_ID, CASE_URN, DEFENDANT_ID, MASTER_DEFENDANT_ID, OFFENCE_ID));
+
+        mockMvc.perform(get("/hearings/{hearingId}/cases/{caseURN}/defendants", HEARING_ID, CASE_URN)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].offences[0].status").value("Awaiting plea"));
+    }
+
+    @Test
+    void getDefendants_should_omitName_whenPersonDefendantAbsent() throws Exception {
+        stubGetHearing(HEARING_ID, HTTP_OK, """
+                {"hearing":{"id":"%s","prosecutionCases":[{"prosecutionCaseIdentifier":{"caseURN":"%s"},"defendants":[
+                    {"id":"%s","masterDefendantId":"%s","offences":[]}
+                ]}]}}
+                """.formatted(HEARING_ID, CASE_URN, DEFENDANT_ID, MASTER_DEFENDANT_ID));
+
+        mockMvc.perform(get("/hearings/{hearingId}/cases/{caseURN}/defendants", HEARING_ID, CASE_URN)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").doesNotExist());
+    }
+
+    @Test
+    void getDefendants_should_returnEmptyList_whenCaseUrnDoesNotMatchAnyProsecutionCase() throws Exception {
+        stubGetHearing(HEARING_ID, HTTP_OK, """
+                {"hearing":{"id":"%s","prosecutionCases":[{"prosecutionCaseIdentifier":{"caseURN":"WXYZ7654321"},"defendants":[
+                    {"id":"%s","masterDefendantId":"%s"}
+                ]}]}}
+                """.formatted(HEARING_ID, DEFENDANT_ID, MASTER_DEFENDANT_ID));
+
+        mockMvc.perform(get("/hearings/{hearingId}/cases/{caseURN}/defendants", HEARING_ID, CASE_URN)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void getDefendants_should_return404_whenHearingDoesNotExist() throws Exception {
+        stubGetHearingNotFound(HEARING_ID);
+
+        mockMvc.perform(get("/hearings/{hearingId}/cases/{caseURN}/defendants", HEARING_ID, CASE_URN)
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isNotFound());
