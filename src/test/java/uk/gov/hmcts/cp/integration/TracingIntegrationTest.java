@@ -30,6 +30,7 @@ class TracingIntegrationTest {
     private static final String TEST_TRACE_ID = "1234-1234";
     private static final String TEST_SPAN_ID = "567-567";
     private static final String LOGGED_CONTROLLER = "uk.gov.hmcts.cp.controllers.HearingController";
+    private static final String CASE_URN = "ABCD1234567";
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Value("${spring.application.name}")
@@ -49,7 +50,7 @@ class TracingIntegrationTest {
     void incomingRequestShouldAddNewTracing() throws Exception {
         final ByteArrayOutputStream capturedStdOut = captureStdOut();
 
-        mockMvc.perform(get("/hearings/cases/{caseURN}/timeline", "test-case-urn"));
+        mockMvc.perform(get("/hearings/cases/{caseURN}/timeline", CASE_URN));
 
         final Map<String, Object> capturedFields = findLogFromHearingController(capturedStdOut);
 
@@ -60,7 +61,7 @@ class TracingIntegrationTest {
     @Test
     void incomingRequestWithTraceIdShouldPassThrough() throws Exception {
         final ByteArrayOutputStream capturedStdOut = captureStdOut();
-        final MvcResult result = mockMvc.perform(get("/hearings/cases/{caseURN}/timeline", "test-case-urn")
+        final MvcResult result = mockMvc.perform(get("/hearings/cases/{caseURN}/timeline", CASE_URN)
                         .header(TRACE_ID_HEADER, TEST_TRACE_ID)
                         .header(SPAN_ID_HEADER, TEST_SPAN_ID))
                 .andDo(print())

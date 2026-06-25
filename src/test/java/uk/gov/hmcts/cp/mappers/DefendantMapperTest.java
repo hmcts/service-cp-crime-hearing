@@ -15,6 +15,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class DefendantMapperTest {
 
+    private static final UUID MASTER_DEFENDANT_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
+    private static final UUID DEFENDANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000022");
+    private static final UUID OFFENCE_ID = UUID.fromString("00000000-0000-0000-0000-000000000003");
+
     private final DefendantMapper mapper = new DefendantMapper();
 
     @Test
@@ -26,21 +30,19 @@ class DefendantMapperTest {
 
     @Test
     void mapToDefendantViews_should_mapIdAndMasterDefendantId() {
-        UUID id = UUID.randomUUID();
-        UUID masterDefendantId = UUID.randomUUID();
-        DefendantEntry entry = DefendantEntry.builder().id(id).masterDefendantId(masterDefendantId).build();
+        DefendantEntry entry = DefendantEntry.builder().id(DEFENDANT_ID).masterDefendantId(MASTER_DEFENDANT_ID).build();
 
         List<DefendantView> views = mapper.mapToDefendantViews(List.of(entry));
 
         assertThat(views).hasSize(1);
-        assertThat(views.get(0).getId()).isEqualTo(id);
-        assertThat(views.get(0).getMasterDefendantId()).isEqualTo(masterDefendantId);
+        assertThat(views.get(0).getId()).isEqualTo(DEFENDANT_ID);
+        assertThat(views.get(0).getMasterDefendantId()).isEqualTo(MASTER_DEFENDANT_ID);
     }
 
     @Test
     void mapToDefendantViews_should_mapNameFromPersonDefendant() {
         DefendantEntry entry = DefendantEntry.builder()
-                .id(UUID.randomUUID())
+                .id(DEFENDANT_ID)
                 .personDefendant(PersonDefendant.builder()
                         .personDetails(PersonDetails.builder().firstName("Alessia").lastName("Mitchell").build())
                         .build())
@@ -53,7 +55,7 @@ class DefendantMapperTest {
 
     @Test
     void mapToDefendantViews_should_returnNullName_whenPersonDefendantIsAbsent() {
-        DefendantEntry entry = DefendantEntry.builder().id(UUID.randomUUID()).build();
+        DefendantEntry entry = DefendantEntry.builder().id(DEFENDANT_ID).build();
 
         List<DefendantView> views = mapper.mapToDefendantViews(List.of(entry));
 
@@ -62,12 +64,11 @@ class DefendantMapperTest {
 
     @Test
     void mapToDefendantViews_should_mapOffenceCodeAndTitleAndPleaValueAsStatus() {
-        UUID offenceId = UUID.randomUUID();
         DefendantEntry entry = DefendantEntry.builder()
-                .id(UUID.randomUUID())
+                .id(DEFENDANT_ID)
                 .offences(List.of(
                         OffenceEntry.builder()
-                                .id(offenceId)
+                                .id(OFFENCE_ID)
                                 .offenceCode("OF61102C")
                                 .offenceTitle("Conspire to assault a person thereby occasioning them actual bodily harm")
                                 .plea(PleaEntry.builder().pleaValue("GUILTY").build())
@@ -78,7 +79,7 @@ class DefendantMapperTest {
         List<DefendantView> views = mapper.mapToDefendantViews(List.of(entry));
 
         assertThat(views.get(0).getOffences()).hasSize(1);
-        assertThat(views.get(0).getOffences().get(0).getId()).isEqualTo(offenceId);
+        assertThat(views.get(0).getOffences().get(0).getId()).isEqualTo(OFFENCE_ID);
         assertThat(views.get(0).getOffences().get(0).getCode()).isEqualTo("OF61102C");
         assertThat(views.get(0).getOffences().get(0).getTitle()).isEqualTo("Conspire to assault a person thereby occasioning them actual bodily harm");
         assertThat(views.get(0).getOffences().get(0).getStatus()).isEqualTo("GUILTY");
@@ -87,8 +88,8 @@ class DefendantMapperTest {
     @Test
     void mapToDefendantViews_should_defaultOffenceStatusToActive_whenNoPleaRecorded() {
         DefendantEntry entry = DefendantEntry.builder()
-                .id(UUID.randomUUID())
-                .offences(List.of(OffenceEntry.builder().id(UUID.randomUUID()).build()))
+                .id(DEFENDANT_ID)
+                .offences(List.of(OffenceEntry.builder().id(OFFENCE_ID).build()))
                 .build();
 
         List<DefendantView> views = mapper.mapToDefendantViews(List.of(entry));
@@ -98,7 +99,7 @@ class DefendantMapperTest {
 
     @Test
     void mapToDefendantViews_should_returnEmptyOffences_whenNoneRecorded() {
-        DefendantEntry entry = DefendantEntry.builder().id(UUID.randomUUID()).build();
+        DefendantEntry entry = DefendantEntry.builder().id(DEFENDANT_ID).build();
 
         List<DefendantView> views = mapper.mapToDefendantViews(List.of(entry));
 

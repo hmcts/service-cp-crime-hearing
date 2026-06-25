@@ -35,7 +35,8 @@ class HearingClientTest {
     @InjectMocks
     private HearingClient hearingClient;
 
-    private final UUID caseId = UUID.fromString("7a2e94c4-38af-43dd-906b-40d632d159b0");
+    private final UUID caseId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+    private final UUID hearingId = UUID.fromString("00000000-0000-0000-0000-000000000011");
 
     @Test
     void getTimeline_should_returnTimelineResponse_whenResponseIsSuccessful() {
@@ -43,7 +44,7 @@ class HearingClientTest {
         when(appProperties.getHearingPath()).thenReturn("/hearing-query-api/query/api/rest/hearing/timeline");
         when(appProperties.getHearingCjscppuid()).thenReturn("test-cjscppuid");
         HearingTimelineResponse response = HearingTimelineResponse.builder()
-                .hearingSummaries(List.of(HearingSummary.builder().hearingId(UUID.randomUUID()).build()))
+                .hearingSummaries(List.of(HearingSummary.builder().hearingId(hearingId).build()))
                 .build();
         when(restTemplate.exchange(
                 anyString(),

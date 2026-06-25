@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 class HearingMapperTest {
 
     private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2026-06-23T00:00:00Z"), ZoneOffset.UTC);
+    private static final UUID EARLIER_HEARING_ID = UUID.fromString("00000000-0000-0000-0000-000000000011");
+    private static final UUID LATER_HEARING_ID = UUID.fromString("00000000-0000-0000-0000-000000000012");
 
     private final HearingMapper hearingMapper = new HearingMapper(new ClockService(FIXED_CLOCK));
 
@@ -42,8 +44,8 @@ class HearingMapperTest {
 
     @Test
     void mapToHearingTimelineView_should_sortHearingsChronologicallyAndMapFields() {
-        UUID laterId = UUID.randomUUID();
-        UUID earlierId = UUID.randomUUID();
+        UUID laterId = LATER_HEARING_ID;
+        UUID earlierId = EARLIER_HEARING_ID;
         HearingTimelineResponse response = HearingTimelineResponse.builder()
                 .hearingSummaries(List.of(
                         HearingSummary.builder()
@@ -80,11 +82,11 @@ class HearingMapperTest {
 
     @Test
     void mapToHearingTimelineView_should_includeNextAppearance_whenFutureHearingExists() {
-        UUID futureId = UUID.randomUUID();
+        UUID futureId = LATER_HEARING_ID;
         HearingTimelineResponse response = HearingTimelineResponse.builder()
                 .hearingSummaries(List.of(
                         HearingSummary.builder()
-                                .hearingId(UUID.randomUUID())
+                                .hearingId(EARLIER_HEARING_ID)
                                 .hearingDate("2026-05-14")
                                 .build(),
                         HearingSummary.builder()
@@ -111,7 +113,7 @@ class HearingMapperTest {
         HearingTimelineResponse response = HearingTimelineResponse.builder()
                 .hearingSummaries(List.of(
                         HearingSummary.builder()
-                                .hearingId(UUID.randomUUID())
+                                .hearingId(EARLIER_HEARING_ID)
                                 .hearingDate("2026-05-14")
                                 .build()
                 ))
@@ -127,7 +129,7 @@ class HearingMapperTest {
         HearingTimelineResponse response = HearingTimelineResponse.builder()
                 .hearingSummaries(List.of(
                         HearingSummary.builder()
-                                .hearingId(UUID.randomUUID())
+                                .hearingId(EARLIER_HEARING_ID)
                                 .hearingDate("not-a-date")
                                 .hearingType("Trial")
                                 .build()

@@ -45,9 +45,16 @@ class HearingServiceTest {
     @InjectMocks
     private HearingService hearingService;
 
-    private final String caseUrn = "test-case-urn";
-    private final UUID caseId = UUID.fromString("7a2e94c4-38af-43dd-906b-40d632d159b0");
-    private final UUID hearingId = UUID.fromString("edcfb790-d709-4d57-8e30-6d2e0546a459");
+    private static final String CASE_URN_A = "ABCD1234567";
+    private static final String CASE_URN_B = "WXYZ7654321";
+    private static final UUID DEFENDANT_ID_1 = UUID.fromString("00000000-0000-0000-0000-000000000022");
+    private static final UUID DEFENDANT_ID_2 = UUID.fromString("00000000-0000-0000-0000-000000000023");
+    private static final UUID MASTER_DEFENDANT_ID_1 = UUID.fromString("22222222-2222-2222-2222-222222222222");
+    private static final UUID MASTER_DEFENDANT_ID_2 = UUID.fromString("33333333-3333-3333-3333-333333333333");
+
+    private final String caseUrn = CASE_URN_A;
+    private final UUID caseId = UUID.fromString("99999999-9999-9999-9999-999999999999");
+    private final UUID hearingId = UUID.fromString("00000000-0000-0000-0000-000000000011");
 
     @Test
     void getCaseTimeline_should_resolveCaseIdThenFetchAndMapTimeline() {
@@ -83,13 +90,12 @@ class HearingServiceTest {
 
     @Test
     void getDefendants_should_returnMappedDefendant_whenMasterDefendantIdMatches() {
-        UUID masterDefendantId = UUID.randomUUID();
-        DefendantEntry matchingDefendant = DefendantEntry.builder().id(UUID.randomUUID()).masterDefendantId(masterDefendantId).build();
+        DefendantEntry matchingDefendant = DefendantEntry.builder().id(DEFENDANT_ID_1).masterDefendantId(MASTER_DEFENDANT_ID_1).build();
         HearingResponse hearingResponse = HearingResponse.builder()
                 .hearing(HearingDetail.builder()
                         .prosecutionCases(List.of(
                                 ProsecutionCase.builder()
-                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN("test-case-urn-a").build())
+                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN(CASE_URN_A).build())
                                         .defendants(List.of(matchingDefendant))
                                         .build()
                         ))
@@ -99,20 +105,20 @@ class HearingServiceTest {
         when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
         when(defendantMapper.mapToDefendantViews(List.of(matchingDefendant))).thenReturn(expectedViews);
 
-        List<DefendantView> result = hearingService.getDefendants(hearingId, "test-case-urn-a", masterDefendantId);
+        List<DefendantView> result = hearingService.getDefendants(hearingId, CASE_URN_A, MASTER_DEFENDANT_ID_1);
 
         assertThat(result).isEqualTo(expectedViews);
     }
 
     @Test
     void getDefendants_should_returnAllDefendantsInCase_whenMasterDefendantIdNotGiven() {
-        DefendantEntry defendantOne = DefendantEntry.builder().id(UUID.randomUUID()).masterDefendantId(UUID.randomUUID()).build();
-        DefendantEntry defendantTwo = DefendantEntry.builder().id(UUID.randomUUID()).masterDefendantId(UUID.randomUUID()).build();
+        DefendantEntry defendantOne = DefendantEntry.builder().id(DEFENDANT_ID_1).masterDefendantId(MASTER_DEFENDANT_ID_1).build();
+        DefendantEntry defendantTwo = DefendantEntry.builder().id(DEFENDANT_ID_2).masterDefendantId(MASTER_DEFENDANT_ID_2).build();
         HearingResponse hearingResponse = HearingResponse.builder()
                 .hearing(HearingDetail.builder()
                         .prosecutionCases(List.of(
                                 ProsecutionCase.builder()
-                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN("test-case-urn-a").build())
+                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN(CASE_URN_A).build())
                                         .defendants(List.of(defendantOne, defendantTwo))
                                         .build()
                         ))
@@ -125,7 +131,7 @@ class HearingServiceTest {
         when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
         when(defendantMapper.mapToDefendantViews(List.of(defendantOne, defendantTwo))).thenReturn(expectedViews);
 
-        List<DefendantView> result = hearingService.getDefendants(hearingId, "test-case-urn-a", null);
+        List<DefendantView> result = hearingService.getDefendants(hearingId, CASE_URN_A, null);
 
         assertThat(result).isEqualTo(expectedViews);
     }
@@ -136,9 +142,9 @@ class HearingServiceTest {
                 .hearing(HearingDetail.builder()
                         .prosecutionCases(List.of(
                                 ProsecutionCase.builder()
-                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN("test-case-urn-b").build())
+                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN(CASE_URN_B).build())
                                         .defendants(List.of(
-                                                DefendantEntry.builder().id(UUID.randomUUID()).masterDefendantId(UUID.randomUUID()).build()
+                                                DefendantEntry.builder().id(DEFENDANT_ID_1).masterDefendantId(MASTER_DEFENDANT_ID_1).build()
                                         ))
                                         .build()
                         ))
@@ -147,20 +153,20 @@ class HearingServiceTest {
         when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
         when(defendantMapper.mapToDefendantViews(List.of())).thenReturn(List.of());
 
-        List<DefendantView> result = hearingService.getDefendants(hearingId, "test-case-urn-a", null);
+        List<DefendantView> result = hearingService.getDefendants(hearingId, CASE_URN_A, null);
 
         assertThat(result).isEmpty();
     }
 
     @Test
     void getDefendants_should_excludeDefendants_whenMasterDefendantIdDoesNotMatch() {
-        DefendantEntry matchingDefendant = DefendantEntry.builder().id(UUID.randomUUID()).masterDefendantId(UUID.randomUUID()).build();
-        DefendantEntry otherDefendant = DefendantEntry.builder().id(UUID.randomUUID()).masterDefendantId(UUID.randomUUID()).build();
+        DefendantEntry matchingDefendant = DefendantEntry.builder().id(DEFENDANT_ID_1).masterDefendantId(MASTER_DEFENDANT_ID_1).build();
+        DefendantEntry otherDefendant = DefendantEntry.builder().id(DEFENDANT_ID_2).masterDefendantId(MASTER_DEFENDANT_ID_2).build();
         HearingResponse hearingResponse = HearingResponse.builder()
                 .hearing(HearingDetail.builder()
                         .prosecutionCases(List.of(
                                 ProsecutionCase.builder()
-                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN("test-case-urn-a").build())
+                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN(CASE_URN_A).build())
                                         .defendants(List.of(matchingDefendant, otherDefendant))
                                         .build()
                         ))
@@ -170,7 +176,7 @@ class HearingServiceTest {
         when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
         when(defendantMapper.mapToDefendantViews(List.of(matchingDefendant))).thenReturn(expectedViews);
 
-        List<DefendantView> result = hearingService.getDefendants(hearingId, "test-case-urn-a", matchingDefendant.getMasterDefendantId());
+        List<DefendantView> result = hearingService.getDefendants(hearingId, CASE_URN_A, matchingDefendant.getMasterDefendantId());
 
         assertThat(result).isEqualTo(expectedViews);
     }
@@ -182,7 +188,7 @@ class HearingServiceTest {
                 .build());
         when(defendantMapper.mapToDefendantViews(List.of())).thenReturn(List.of());
 
-        List<DefendantView> result = hearingService.getDefendants(hearingId, "test-case-urn-a", null);
+        List<DefendantView> result = hearingService.getDefendants(hearingId, CASE_URN_A, null);
 
         assertThat(result).isEmpty();
     }

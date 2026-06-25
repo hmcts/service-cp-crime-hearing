@@ -31,8 +31,8 @@ class CaseUrnMapperClientTest {
     @InjectMocks
     private CaseUrnMapperClient caseUrnMapperClient;
 
-    private final String caseUrn = "test-case-urn";
-    private final UUID caseId = UUID.fromString("7a2e94c4-38af-43dd-906b-40d632d159b0");
+    private final String caseUrn = "ABCD1234567";
+    private final UUID caseId = UUID.fromString("99999999-9999-9999-9999-999999999999");
 
     @Test
     void getCaseId_should_returnCaseId_whenResponseIsSuccessful() {

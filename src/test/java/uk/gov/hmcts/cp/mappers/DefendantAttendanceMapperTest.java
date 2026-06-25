@@ -18,7 +18,9 @@ class DefendantAttendanceMapperTest {
 
     private final DefendantAttendanceMapper mapper = new DefendantAttendanceMapper();
 
-    private final UUID hearingId = UUID.randomUUID();
+    private final UUID hearingId = UUID.fromString("00000000-0000-0000-0000-000000000011");
+    private final UUID defendantId1 = UUID.fromString("00000000-0000-0000-0000-000000000022");
+    private final UUID defendantId2 = UUID.fromString("00000000-0000-0000-0000-000000000023");
 
     @Test
     void mapToDefendantAttendanceView_should_returnEmptyDefendants_whenResponseIsNull() {
@@ -41,8 +43,6 @@ class DefendantAttendanceMapperTest {
 
     @Test
     void mapToDefendantAttendanceView_should_mapMultipleDefendantsAndDays() {
-        UUID defendantId1 = UUID.randomUUID();
-        UUID defendantId2 = UUID.randomUUID();
         HearingResponse response = HearingResponse.builder()
                 .hearing(HearingDetail.builder()
                         .defendantAttendance(List.of(
