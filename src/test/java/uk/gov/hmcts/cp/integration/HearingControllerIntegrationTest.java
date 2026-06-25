@@ -25,9 +25,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Slf4j
 class HearingControllerIntegrationTest extends IntegrationTestBase {
 
-    private static final String CASE_URN = "test-case-urn";
-    private static final UUID CASE_ID = UUID.fromString("7a2e94c4-38af-43dd-906b-40d632d159b0");
-    private static final UUID HEARING_ID = UUID.fromString("edcfb790-d709-4d57-8e30-6d2e0546a459");
+    private static final String CASE_URN = "ABCD1234567";
+    private static final UUID CASE_ID = UUID.fromString("99999999-9999-9999-9999-999999999999");
+    private static final UUID HEARING_ID = UUID.fromString("00000000-0000-0000-0000-000000000011");
+    private static final UUID DEFENDANT_ID = UUID.fromString("00000000-0000-0000-0000-000000000022");
 
     private WireMockServer wireMockServer;
 
@@ -82,17 +83,16 @@ class HearingControllerIntegrationTest extends IntegrationTestBase {
 
     @Test
     void getDefendantAttendance_should_returnOk_withMappedFields() throws Exception {
-        UUID defendantId = UUID.randomUUID();
         stubGetHearing(HEARING_ID, HTTP_OK, """
                 {"hearing":{"id":"%s","defendantAttendance":[{"defendantId":"%s","attendanceDays":[{"day":"2026-06-23","attendanceType":"IN_PERSON"}]}]}}
-                """.formatted(HEARING_ID, defendantId));
+                """.formatted(HEARING_ID, DEFENDANT_ID));
 
         mockMvc.perform(get("/hearings/{hearingId}/attendance", HEARING_ID)
                         .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(HEARING_ID.toString()))
-                .andExpect(jsonPath("$.defendants[0].id").value(defendantId.toString()))
+                .andExpect(jsonPath("$.defendants[0].id").value(DEFENDANT_ID.toString()))
                 .andExpect(jsonPath("$.defendants[0].attendanceDays[0].day").value("2026-06-23"))
                 .andExpect(jsonPath("$.defendants[0].attendanceDays[0].type").value("IN_PERSON"));
     }
