@@ -45,7 +45,7 @@ All three operations on `HearingsApi` are implemented: `getCaseTimeline`
 - `mappers/DefendantMapper` — owns all `DefendantView`/`OffenceView` builder construction for
   `getDefendants`. `name` comes from `defendant.personDefendant.personDetails.firstName/lastName`
   (null if absent, e.g. organisation/legal-entity defendants); `offences[].status` is derived from
-  `offence.plea.pleaValue` (`"Active"` if no plea recorded yet), mirroring
+  `offence.plea.pleaValue` (`"Awaiting plea"` if no plea recorded yet), mirroring
   `cpp-case-aggregator-poc`'s `CaseAggregatorService.deriveOffenceStatus`. `dateOfBirth` is never
   set — it isn't present anywhere in the real `hearing-query-api` response.
 - `domain/HearingResponse` — DTO for the `GET /hearings/{hearingId}` response, shared by
@@ -93,7 +93,7 @@ All three operations on `HearingsApi` are implemented: `getCaseTimeline`
   POJO both have the field). `HearingService.resolveDefendantIds` implements this resolution
   (returning a list — `masterDefendantId`:`defendantId` is 1:many, not 1:1) but has no caller yet.
 - `offences[].status` has no literal source field on `hearing-query-api`'s raw offence object —
-  resolved via a derivation rule (`plea.pleaValue`, default `"Active"`) rather than a second
+  resolved via a derivation rule (`plea.pleaValue`, default `"Awaiting plea"`) rather than a second
   backend call, matching `cpp-case-aggregator-poc`'s existing precedent.
 - The `apiSpec` dependency is wired as a plain `implementation` coordinate (`uk.gov.hmcts.cp:api-cp-crime-hearing:1.0.1`) rather than a dedicated `apiSpec` Gradle configuration — this template generation does not define one; see `build.gradle`. Must stay in lockstep with the `api-cp-crime-hearing` release that introduces whatever endpoint/field this service needs next.
 

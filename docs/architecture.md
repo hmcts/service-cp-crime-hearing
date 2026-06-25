@@ -139,4 +139,4 @@ the earlier `resolveDefendantId` building block, which only returned matching de
 required `masterDefendantId`; the real endpoint needed the opposite optionality (`caseURN` always
 required, `masterDefendantId` optional) plus full `DefendantView` data via `DefendantMapper`.
 `dateOfBirth` is omitted — not present anywhere in the upstream response. `offences[].status` is
-derived from `plea.pleaValue` (`"Active"` if no plea recorded).
+derived from `plea.pleaValue` (`"Awaiting plea"` if no plea recorded).

@@ -44,7 +44,7 @@ payload).
 
 - `name` = `(firstName + " " + lastName).strip()` when `personDefendant` is present, else `null`.
   Mirrors `cpp-case-aggregator-poc`'s `CaseAggregatorService.fullName()`.
-- `offences[].status` = `plea.pleaValue` if present and non-blank, else `"Active"`. Mirrors
+- `offences[].status` = `plea.pleaValue` if present and non-blank, else `"Awaiting plea"`. Mirrors
   `cpp-case-aggregator-poc`'s `CaseAggregatorService.deriveOffenceStatus()`.
 - `dateOfBirth` is never set. `spring.jackson.default-property-inclusion: non_null` is added to
   `application.yaml` so it (and any other null field) is omitted from the JSON response instead of
