@@ -86,7 +86,7 @@ class DefendantMapperTest {
     }
 
     @Test
-    void mapToDefendantViews_should_defaultOffenceStatusToActive_whenNoPleaRecorded() {
+    void mapToDefendantViews_should_defaultOffenceStatusToAwaitingPlea_whenNoPleaRecorded() {
         DefendantEntry entry = DefendantEntry.builder()
                 .id(DEFENDANT_ID)
                 .offences(List.of(OffenceEntry.builder().id(OFFENCE_ID).build()))
@@ -94,7 +94,7 @@ class DefendantMapperTest {
 
         List<DefendantView> views = mapper.mapToDefendantViews(List.of(entry));
 
-        assertThat(views.get(0).getOffences().get(0).getStatus()).isEqualTo("Active");
+        assertThat(views.get(0).getOffences().get(0).getStatus()).isEqualTo("Awaiting plea");
     }
 
     @Test
