@@ -7,6 +7,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.cp.openapi.model.DefendantAttendanceView;
 import uk.gov.hmcts.cp.openapi.model.DefendantView;
 import uk.gov.hmcts.cp.openapi.model.HearingTimelineView;
@@ -16,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,14 +46,17 @@ class HearingControllerTest {
     }
 
     @Test
-    void getCaseTimeline_should_sanitizeCaseUrn() {
-        String unsanitizedCaseUrn = "<script>alert('xss')</script>";
-        HearingTimelineView expectedView = HearingTimelineView.builder().build();
-        when(hearingService.getCaseTimeline(anyString())).thenReturn(expectedView);
+    void getCaseTimeline_should_rejectCaseUrn_whenNotAlphanumeric() {
+        assertThrows(ResponseStatusException.class, () -> hearingController.getCaseTimeline("<script>alert('xss')</script>"));
+        assertThrows(ResponseStatusException.class, () -> hearingController.getCaseTimeline(null));
+        assertThrows(ResponseStatusException.class, () -> hearingController.getCaseTimeline(""));
+        assertThrows(ResponseStatusException.class, () -> hearingController.getCaseTimeline("A".repeat(31)));
+    }
 
-        ResponseEntity<HearingTimelineView> response = hearingController.getCaseTimeline(unsanitizedCaseUrn);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+    @Test
+    void getDefendants_should_rejectCaseUrn_whenNotAlphanumeric() {
+        assertThrows(ResponseStatusException.class,
+                () -> hearingController.getDefendants(HEARING_ID, "<script>alert('xss')</script>", MASTER_DEFENDANT_ID));
     }
 
     @Test
