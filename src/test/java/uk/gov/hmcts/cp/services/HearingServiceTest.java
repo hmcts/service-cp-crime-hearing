@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.server.ResponseStatusException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -243,4 +244,14 @@ class HearingServiceTest {
 
         assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
     }
+
+    @Test
+    void getDefendant_should_propagate404_whenHearingClientReturnsNotFound() {
+        when(hearingClient.getHearing(hearingId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
+
+        assertThrows(HttpClientErrorException.class,
+                () -> hearingService.getDefendant(hearingId, CASE_URN_A, DEFENDANT_ID_1));
+    }
 }
+
