@@ -58,6 +58,17 @@ public class HearingController implements HearingsApi {
                 .body(defendants);
     }
 
+    @Override
+    @NonNull
+    public ResponseEntity<DefendantView> getDefendant(final UUID hearingId, final String caseURN, final UUID defendantId) {
+        log.info("Received request to get defendant for hearingId:{} caseURN:{} defendantId:{}",
+                Encode.forJava(String.valueOf(hearingId)), Encode.forJava(caseURN), Encode.forJava(String.valueOf(defendantId)));
+        final DefendantView defendant = hearingService.getDefendant(hearingId, validateCaseUrn(caseURN), defendantId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(defendant);
+    }
+
     private String validateCaseUrn(final String caseUrn) {
         if (caseUrn == null || !caseUrn.matches(CASE_URN_REGEX)) {
             log.warn("CaseUrn {} does not match expected caseRegex:{}", Encode.forJava(caseUrn), CASE_URN_REGEX);

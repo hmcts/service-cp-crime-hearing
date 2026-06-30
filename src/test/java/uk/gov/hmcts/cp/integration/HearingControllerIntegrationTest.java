@@ -259,6 +259,52 @@ class HearingControllerIntegrationTest extends IntegrationTestBase {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void getDefendant_should_returnOk_withDefendantFields() throws Exception {
+        stubGetHearing(HEARING_ID, HTTP_OK, """
+                {"hearing":{"id":"%s","prosecutionCases":[{"prosecutionCaseIdentifier":{"caseURN":"%s"},"defendants":[
+                    {"id":"%s","masterDefendantId":"%s","personDefendant":{"personDetails":{"firstName":"John","lastName":"Doe"}},"offences":[{"id":"%s","offenceCode":"TH68001","offenceTitle":"Theft from a shop","plea":{"pleaValue":"GUILTY"}}]}
+                ]}]}}
+                """.formatted(HEARING_ID, CASE_URN, DEFENDANT_ID, MASTER_DEFENDANT_ID, OFFENCE_ID));
+
+        mockMvc.perform(get("/hearings/{hearingId}/cases/{caseURN}/defendants/{defendantId}",
+                        HEARING_ID, CASE_URN, DEFENDANT_ID)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(DEFENDANT_ID.toString()))
+                .andExpect(jsonPath("$.masterDefendantId").value(MASTER_DEFENDANT_ID.toString()))
+                .andExpect(jsonPath("$.name").value("John Doe"))
+                .andExpect(jsonPath("$.offences[0].code").value("TH68001"))
+                .andExpect(jsonPath("$.offences[0].status").value("GUILTY"));
+    }
+
+    @Test
+    void getDefendant_should_return404_whenDefendantIdNotFound() throws Exception {
+        stubGetHearing(HEARING_ID, HTTP_OK, """
+                {"hearing":{"id":"%s","prosecutionCases":[{"prosecutionCaseIdentifier":{"caseURN":"%s"},"defendants":[
+                    {"id":"%s","masterDefendantId":"%s"}
+                ]}]}}
+                """.formatted(HEARING_ID, CASE_URN, DEFENDANT_ID_2, OTHER_MASTER_DEFENDANT_ID));
+
+        mockMvc.perform(get("/hearings/{hearingId}/cases/{caseURN}/defendants/{defendantId}",
+                        HEARING_ID, CASE_URN, DEFENDANT_ID)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void getDefendant_should_return404_whenHearingDoesNotExist() throws Exception {
+        stubGetHearingNotFound(HEARING_ID);
+
+        mockMvc.perform(get("/hearings/{hearingId}/cases/{caseURN}/defendants/{defendantId}",
+                        HEARING_ID, CASE_URN, DEFENDANT_ID)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isNotFound());
+    }
+
     private void stubUrnMapper(final String caseUrn, final UUID caseId) {
         final String url = String.format("%s/%s", appProperties.getCaseMapperPath(), caseUrn);
         final String body = String.format("{\"caseUrn\":\"%s\",\"caseId\":\"%s\"}", caseUrn, caseId);

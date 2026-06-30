@@ -25,6 +25,10 @@ public class DefendantMapper {
                 .toList();
     }
 
+    public DefendantView mapToDefendantView(final DefendantEntry entry) {
+        return toDefendantView(entry);
+    }
+
     private DefendantView toDefendantView(final DefendantEntry entry) {
         return DefendantView.builder()
                 .id(entry.getId())

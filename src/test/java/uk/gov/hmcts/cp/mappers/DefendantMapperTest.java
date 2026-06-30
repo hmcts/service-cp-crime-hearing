@@ -105,4 +105,30 @@ class DefendantMapperTest {
 
         assertThat(views.get(0).getOffences()).isEmpty();
     }
+
+    @Test
+    void mapToDefendantView_should_mapSingleEntry() {
+        DefendantEntry entry = DefendantEntry.builder()
+                .id(DEFENDANT_ID)
+                .masterDefendantId(MASTER_DEFENDANT_ID)
+                .personDefendant(PersonDefendant.builder()
+                        .personDetails(PersonDetails.builder().firstName("John").lastName("Doe").build())
+                        .build())
+                .offences(List.of(OffenceEntry.builder()
+                        .id(OFFENCE_ID)
+                        .offenceCode("TH68001")
+                        .offenceTitle("Theft from a shop")
+                        .plea(PleaEntry.builder().pleaValue("GUILTY").build())
+                        .build()))
+                .build();
+
+        DefendantView view = mapper.mapToDefendantView(entry);
+
+        assertThat(view.getId()).isEqualTo(DEFENDANT_ID);
+        assertThat(view.getMasterDefendantId()).isEqualTo(MASTER_DEFENDANT_ID);
+        assertThat(view.getName()).isEqualTo("John Doe");
+        assertThat(view.getOffences()).hasSize(1);
+        assertThat(view.getOffences().get(0).getCode()).isEqualTo("TH68001");
+        assertThat(view.getOffences().get(0).getStatus()).isEqualTo("GUILTY");
+    }
 }

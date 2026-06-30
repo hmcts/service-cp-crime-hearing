@@ -2,7 +2,9 @@ package uk.gov.hmcts.cp.services;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 import uk.gov.hmcts.cp.clients.HearingClient;
 import uk.gov.hmcts.cp.domain.HearingResponse;
 import uk.gov.hmcts.cp.domain.HearingTimelineResponse;
@@ -42,19 +44,31 @@ public class HearingService {
     }
 
     public List<DefendantView> getDefendants(final UUID hearingId, final String caseURN, final UUID masterDefendantId) {
+        final List<HearingResponse.DefendantEntry> defendants = findDefendantsForCase(hearingId, caseURN).stream()
+                .filter(d -> masterDefendantId == null || masterDefendantId.equals(d.getMasterDefendantId()))
+                .toList();
+        return defendantMapper.mapToDefendantViews(defendants);
+    }
+
+    public DefendantView getDefendant(final UUID hearingId, final String caseURN, final UUID defendantId) {
+        return findDefendantsForCase(hearingId, caseURN).stream()
+                .filter(d -> defendantId.equals(d.getId()))
+                .findFirst()
+                .map(defendantMapper::mapToDefendantView)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "No defendant found for the supplied defendantId"));
+    }
+
+    private List<HearingResponse.DefendantEntry> findDefendantsForCase(final UUID hearingId, final String caseURN) {
         final HearingResponse hearingResponse = hearingClient.getHearing(hearingId);
         final List<HearingResponse.ProsecutionCase> prosecutionCases = Optional.ofNullable(hearingResponse)
                 .map(HearingResponse::getHearing)
                 .map(HearingResponse.HearingDetail::getProsecutionCases)
                 .orElse(Collections.emptyList());
-
-        final List<HearingResponse.DefendantEntry> defendants = prosecutionCases.stream()
+        return prosecutionCases.stream()
                 .filter(pc -> matchesCaseUrn(pc, caseURN))
                 .flatMap(pc -> Optional.ofNullable(pc.getDefendants()).orElse(Collections.emptyList()).stream())
-                .filter(d -> masterDefendantId == null || masterDefendantId.equals(d.getMasterDefendantId()))
                 .toList();
-
-        return defendantMapper.mapToDefendantViews(defendants);
     }
 
     private boolean matchesCaseUrn(final HearingResponse.ProsecutionCase prosecutionCase, final String caseUrn) {

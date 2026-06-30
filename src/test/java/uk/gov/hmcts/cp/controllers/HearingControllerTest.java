@@ -80,4 +80,21 @@ class HearingControllerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isEqualTo(expectedViews);
     }
+
+    @Test
+    void getDefendant_should_returnOk_withDefendantView() {
+        DefendantView expectedView = DefendantView.builder().id(DEFENDANT_ID).masterDefendantId(MASTER_DEFENDANT_ID).build();
+        when(hearingService.getDefendant(HEARING_ID, CASE_URN, DEFENDANT_ID)).thenReturn(expectedView);
+
+        ResponseEntity<DefendantView> response = hearingController.getDefendant(HEARING_ID, CASE_URN, DEFENDANT_ID);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isEqualTo(expectedView);
+    }
+
+    @Test
+    void getDefendant_should_rejectCaseUrn_whenNotAlphanumeric() {
+        assertThrows(ResponseStatusException.class,
+                () -> hearingController.getDefendant(HEARING_ID, "<script>alert('xss')</script>", DEFENDANT_ID));
+    }
 }

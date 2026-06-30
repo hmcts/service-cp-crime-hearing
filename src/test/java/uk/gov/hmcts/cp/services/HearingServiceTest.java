@@ -23,8 +23,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.server.ResponseStatusException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -192,4 +197,61 @@ class HearingServiceTest {
 
         assertThat(result).isEmpty();
     }
+
+    @Test
+    void getDefendant_should_returnMappedView_whenDefendantFound() {
+        DefendantEntry matchingDefendant = DefendantEntry.builder()
+                .id(DEFENDANT_ID_1)
+                .masterDefendantId(MASTER_DEFENDANT_ID_1)
+                .build();
+        HearingResponse hearingResponse = HearingResponse.builder()
+                .hearing(HearingDetail.builder()
+                        .prosecutionCases(List.of(
+                                ProsecutionCase.builder()
+                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN(CASE_URN_A).build())
+                                        .defendants(List.of(matchingDefendant))
+                                        .build()
+                        ))
+                        .build())
+                .build();
+        DefendantView expectedView = DefendantView.builder().id(DEFENDANT_ID_1).build();
+        when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
+        when(defendantMapper.mapToDefendantView(matchingDefendant)).thenReturn(expectedView);
+
+        DefendantView result = hearingService.getDefendant(hearingId, CASE_URN_A, DEFENDANT_ID_1);
+
+        assertThat(result).isEqualTo(expectedView);
+    }
+
+    @Test
+    void getDefendant_should_throw404_whenDefendantIdNotFound() {
+        HearingResponse hearingResponse = HearingResponse.builder()
+                .hearing(HearingDetail.builder()
+                        .prosecutionCases(List.of(
+                                ProsecutionCase.builder()
+                                        .prosecutionCaseIdentifier(ProsecutionCaseIdentifier.builder().caseURN(CASE_URN_A).build())
+                                        .defendants(List.of(
+                                                DefendantEntry.builder().id(DEFENDANT_ID_2).masterDefendantId(MASTER_DEFENDANT_ID_2).build()
+                                        ))
+                                        .build()
+                        ))
+                        .build())
+                .build();
+        when(hearingClient.getHearing(hearingId)).thenReturn(hearingResponse);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> hearingService.getDefendant(hearingId, CASE_URN_A, DEFENDANT_ID_1));
+
+        assertThat(ex.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void getDefendant_should_propagate404_whenHearingClientReturnsNotFound() {
+        when(hearingClient.getHearing(hearingId))
+                .thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
+
+        assertThrows(HttpClientErrorException.class,
+                () -> hearingService.getDefendant(hearingId, CASE_URN_A, DEFENDANT_ID_1));
+    }
 }
+
