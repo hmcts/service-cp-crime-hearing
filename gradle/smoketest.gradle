@@ -1,0 +1,79 @@
+// Smoke tests hit a real deployed environment (SMOKE_SERVICE_BASE_URL / CP_BACKEND_URL /
+// CJSCPPUID / SMOKE_ENVIRONMENT env vars) - never run as part of build/check/CI unit test flow.
+// Setup (creates a CP case) and Run (checks getCaseTimeline) are separate tasks because prp/prd
+// cannot create cases and have no Setup step - see
+// docs/pipeline/specs/2026-07-03-smoke-testing-framework-design.md §4/§4a.
+// Invoke explicitly: ./gradlew smokeTestSetup smokeTestRun (dev/sit) or ./gradlew smokeTestRun (prp/prd)
+tasks.register('smokeTestSetup', Test) {
+  description = "Creates a CP case for smoke testing and records it in case-config (dev/sit only)"
+  group = "Verification"
+
+  testClassesDirs = sourceSets.smokeTest.output.classesDirs
+  classpath = sourceSets.smokeTest.runtimeClasspath
+  useJUnitPlatform()
+  filter {
+    includeTestsMatching "uk.gov.hmcts.cp.smoketest.SetupCreateCaseSmokeTest"
+  }
+
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat = 'full'
+    showStandardStreams = true
+  }
+  reports {
+    junitXml.required.set(true)
+    junitXml.outputPerTestCase = true
+    junitXml.outputLocation.set(layout.buildDirectory.dir('test-results/smokeTest'))
+    html.required.set(true)
+    html.outputLocation.set(layout.buildDirectory.dir('reports/tests/smokeTest'))
+  }
+}
+
+tasks.register('smokeTestRun', Test) {
+  description = "Checks getCaseTimeline against the case recorded in case-config (every tier)"
+  group = "Verification"
+
+  testClassesDirs = sourceSets.smokeTest.output.classesDirs
+  classpath = sourceSets.smokeTest.runtimeClasspath
+  useJUnitPlatform()
+  filter {
+    includeTestsMatching "uk.gov.hmcts.cp.smoketest.RunCheckTimelineSmokeTest"
+  }
+
+  testLogging {
+    events "passed", "skipped", "failed"
+    exceptionFormat = 'full'
+    showStandardStreams = true
+  }
+  reports {
+    junitXml.required.set(true)
+    junitXml.outputPerTestCase = true
+    junitXml.outputLocation.set(layout.buildDirectory.dir('test-results/smokeTest'))
+    html.required.set(true)
+    html.outputLocation.set(layout.buildDirectory.dir('reports/tests/smokeTest'))
+  }
+}
+
+sourceSets {
+  smokeTest {
+    java {
+      compileClasspath += sourceSets.main.output
+      runtimeClasspath += sourceSets.main.output
+    }
+  }
+}
+
+configurations {
+  smokeTestImplementation.extendsFrom testImplementation
+  smokeTestRuntimeOnly.extendsFrom testRuntimeOnly
+  smokeTestCompileOnly.extendsFrom testCompileOnly
+  smokeTestAnnotationProcessor.extendsFrom testAnnotationProcessor
+}
+
+// pmdTest is disabled repo-wide (gradle/pmd.gradle) since PMD's test-oriented rules don't apply
+// meaningfully to test code - smokeTest gets the same treatment for the same reason. Declared here
+// rather than in pmd.gradle because pmd.gradle is applied before this file (build.gradle), so
+// pmdSmokeTest doesn't exist yet at that point.
+tasks.named("pmdSmokeTest").configure {
+  enabled = false
+}
